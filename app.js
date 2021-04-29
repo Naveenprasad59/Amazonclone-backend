@@ -29,6 +29,28 @@ const productSchema = new mongoose.Schema({
 
 const productsModel = mongoose.model("products",productSchema);
 
+const historyproductSchema = new mongoose.Schema({
+    id: String,
+    title: String,
+    price: Number,
+    rating: Number,
+    image: String,
+    quantity: Number
+})
+
+const historyModel = mongoose.model("historyProducts",historyproductSchema);
+
+const historySchema = new mongoose.Schema({
+  user: String,
+  products: [historyproductSchema],
+  price: Number,
+  date:  String
+})
+
+
+const purchaceHistory = mongoose.model("purchasehistory",historySchema);
+
+
 app.get("/products",(req,res)=>{
      let p;
     productsModel.find(function(err,allProducts){
@@ -50,7 +72,7 @@ app.post("/login",(req,res)=>{
   const username = req.body.username;
   const password = req.body.password;
   console.log(req.body);
-  userModel.findOne({username: username},function(err,user){
+  userModel.findOne({username: username},function(err,user) {
     if(err){
       console.log(err);
       res.send({success: false})
@@ -84,6 +106,40 @@ app.post("/register",(req,res)=>{
     }
   });
 
+})
+
+
+app.post("/buyproduct",(req,res)=>{
+  var products = req.body.products;
+  const user = req.body.user;
+  const price = req.body.price;
+  const date = req.body.date;
+  console.log(req.body);
+  products = products.map ( (item) => {
+    const product = historyModel(item);
+    product.save();
+    return product;
+  });
+
+  const purchased = purchaceHistory({
+    user: user,
+    products: products,
+    price: price,
+    date: date
+  })
+  purchased.save();
+  res.send({success:true})
+})
+
+app.get("/buyproduct",(req,res)=>{
+  const user = req.query.user;
+  console.log(user);
+  purchaceHistory.find({user:user},function(err,purchases){
+    if(!err){
+    console.log(purchases);
+    res.send({purchases: purchases})
+    }
+  })
 })
 
 const PORT_NUM = process.env.PORT|| 8000;
